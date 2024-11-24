@@ -6,8 +6,9 @@ import time
 import time
 
 # Get API key from environment variable
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
+def initialize_openai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    return OpenAI(api_key=api_key)
 
 def fetch_chatgpt_code(prompt, is_retry=False):
     try:
@@ -142,4 +143,6 @@ def optimize_code(original_prompt, original_time, filename):
 
 if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
-    process_and_execute_code(prompt,"generatedcode.py")
+    filename = "generatedcode.py"
+    client = initialize_openai_client()
+    process_and_execute_code(prompt, filename)
