@@ -9,7 +9,7 @@ client = OpenAI(api_key=api_key)
 
 def fetch_chatgpt_code(prompt):
     try:
-        unit_test_prompt =  "Also, please include running unit tests with asserts that check the logic of the program. Make sure to also check interesting edge cases. There should be at least 10 different unit tests. At the end of the test suite, print a message indicating that all tests passed successfully if no asserts fail."
+        unit_test_prompt = "Also, please include running unit tests with asserts that check the logic of the program. Make sure to also check interesting edge cases. There should be at least 10 different unit tests. After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
         prompt_to_send = prompt + unit_test_prompt
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -38,13 +38,18 @@ def execute_generated_code(filename):
         result = subprocess.run(['python', filename], capture_output=True, text=True)
         if result.returncode == 0:
             if result.stdout:
-                print("Execution Output:\n",result.stdout)  
+                print("Execution Output:\n",result.stdout)
+                if "All tests passed successfully" in result.stdout:
+                    return True
             else:
                 print("No output from the generated code.")
+            return False
         else:
-            print("Execution Error:\n", result.stderr)  
+            print("Execution Error:\n", result.stderr)
+            return False
     except subprocess.CalledProcessError as e:
         print(f"Error while executing the generated code: {e}")
+        return False
 
 def process_and_execute_code(prompt, filename):
     code_response = fetch_chatgpt_code(prompt)
@@ -53,8 +58,7 @@ def process_and_execute_code(prompt, filename):
         print("\n=== Python Code ===")
         print(output_code)
         save_code_to_file(output_code, filename)
-        execute_generated_code(filename)
-        return True
+        return execute_generated_code(filename)
     else:
         print("Failed to fetch a valid response from GPT.")
         return False
