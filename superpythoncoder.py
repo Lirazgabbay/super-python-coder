@@ -1,5 +1,8 @@
 #superpythoncoder.py
 import random
+import subprocess
+import os
+
 from chat_app import  process_and_execute_code
 
 def suggest_random_program():
@@ -80,3 +83,11 @@ if __name__ == "__main__":
     prompt = super_python_coder()
     if process_and_execute_code(prompt, filename):
         print("Code creation completed successfully!")
+    try:
+        file_path = os.path.abspath(filename)
+        if os.path.exists(filename):
+            subprocess.call(["start","", file_path], shell=True)
+        else:
+            print(f"Error: The file {filename} was not created.")
+    except Exception as e:
+        print(f"Could not open the file: {e}")   
