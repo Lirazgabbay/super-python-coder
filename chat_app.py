@@ -21,10 +21,21 @@ def fetch_chatgpt_code(prompt):
         print(f"Error: {e}")
         return None
 
+def save_code_to_file(code, filename="generatedcode.py"):
+    try:
+        output_code = code.replace("```python", "").replace("```", "").strip()
+        with open(filename, "w") as file:
+            file.write(output_code)
+        print(f"Code saved to {filename}")
+    except Exception as e:
+        print(f"Failed to save code: {e}")
+
 prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
 code_response = fetch_chatgpt_code(prompt)
 if code_response:
     print("\n=== Python Code ===")
     print(code_response)
+    save_code_to_file(code_response)
 else:
     print("Failed to fetch a valid response from GPT.")
+
