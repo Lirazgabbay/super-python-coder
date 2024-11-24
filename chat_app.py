@@ -24,7 +24,7 @@ def fetch_chatgpt_code(prompt):
         print(f"Error: {e}")
         return None
 
-def save_code_to_file(code, filename="generatedcode.py"):
+def save_code_to_file(code, filename):
     try:
         with open(filename, "w") as file:
             file.write(code)
@@ -32,7 +32,7 @@ def save_code_to_file(code, filename="generatedcode.py"):
     except Exception as e:
         print(f"Failed to save code: {e}")
 
-def execute_generated_code(filename="generatedcode.py"):
+def execute_generated_code(filename):
     try:
         print("\n=== Executing Generated Code ===\n")
         result = subprocess.run(['python', filename], capture_output=True, text=True)
@@ -46,13 +46,14 @@ def execute_generated_code(filename="generatedcode.py"):
     except subprocess.CalledProcessError as e:
         print(f"Error while executing the generated code: {e}")
 
+filename="generatedcode.py"
 prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
 code_response = fetch_chatgpt_code(prompt)
 if code_response:
     output_code = code_response.replace("```python", "").replace("```", "").strip()
     print("\n=== Python Code ===")
     print(output_code)
-    save_code_to_file(output_code)
-    execute_generated_code()
+    save_code_to_file(output_code,filename)
+    execute_generated_code(filename)
 else:
     print("Failed to fetch a valid response from GPT.")
