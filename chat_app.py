@@ -3,6 +3,7 @@ from openai import OpenAI
 import os
 import subprocess
 import time
+import time
 
 # Get API key from environment variable
 api_key = os.getenv("OPENAI_API_KEY")
@@ -40,7 +41,10 @@ def execute_generated_code(filename):
     try:
         print("\n=== Executing Generated Code ===\n")
         start_time = time.perf_counter()
+        start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
+        end_time = time.perf_counter()
+        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         end_time = time.perf_counter()
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:

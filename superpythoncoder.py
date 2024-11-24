@@ -29,7 +29,20 @@ def suggest_random_program():
         - Take a number as input
         - Return True if it's a palindrome, False otherwise
         - Handle negative numbers and edge cases""",
+        # Problem 2: Palindrome Number
+        """Create a program that checks if a number is a palindrome.
+        Requirements:
+        - Take a number as input
+        - Return True if it's a palindrome, False otherwise
+        - Handle negative numbers and edge cases""",
 
+        # Problem 3: BST K-th Element
+        """Create a program that finds the kth smallest element in a binary search tree.
+        Requirements:
+        - Implement a binary search tree
+        - Find the kth smallest element
+        - Handle edge cases (empty tree, k > tree size)
+        - Use efficient traversal methods"""
         # Problem 3: BST K-th Element
         """Create a program that finds the kth smallest element in a binary search tree.
         Requirements:
