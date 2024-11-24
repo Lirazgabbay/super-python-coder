@@ -2,6 +2,7 @@
 from openai import OpenAI
 import os
 import subprocess
+import time
 
 # Get API key from environment variable
 api_key = os.getenv("OPENAI_API_KEY")
@@ -35,16 +36,24 @@ def save_code_to_file(code, filename):
 def execute_generated_code(filename):
     try:
         print("\n=== Executing Generated Code ===\n")
+        start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
+        end_time = time.perf_counter()
+        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
             if result.stdout:
                 print("Execution Output:\n",result.stdout)  
+                return execution_time
             else:
                 print("No output from the generated code.")
+                return None
         else:
             print("Execution Error:\n", result.stderr)  
+            return None
     except subprocess.CalledProcessError as e:
         print(f"Error while executing the generated code: {e}")
+        return None
+
 
 def process_and_execute_code(prompt, filename):
     code_response = fetch_chatgpt_code(prompt)
