@@ -10,7 +10,7 @@ def initialize_openai_client():
     api_key = os.getenv("OPENAI_API_KEY")
     return OpenAI(api_key=api_key)
 
-def fetch_chatgpt_code(prompt, is_retry=False):
+def fetch_chatgpt_code(client, prompt, is_retry=False):
     try:
         if not is_retry:
             unit_test_prompt = "Also, please include running unit tests with asserts that check the logic of the program. Make sure to also check interesting edge cases. There should be at least 10 different unit tests. After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
@@ -42,10 +42,7 @@ def execute_generated_code(filename):
     try:
         print("\n=== Executing Generated Code ===\n")
         start_time = time.perf_counter()
-        start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
-        end_time = time.perf_counter()
-        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         end_time = time.perf_counter()
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
@@ -63,7 +60,7 @@ def execute_generated_code(filename):
         print(f"Error while executing the generated code: {error_msg}")
         return False, error_msg
 
-def process_and_execute_code(prompt, filename, max_retries=5):
+def process_and_execute_code(client, prompt, filename, max_retries=5):
     attempt = 1
     last_error = None
     last_code = None
@@ -72,22 +69,13 @@ def process_and_execute_code(prompt, filename, max_retries=5):
     while attempt <= max_retries:
         if attempt > 1:
             print(f"\nAttempt {attempt}/{max_retries}")
-            prompt = f"""
-            The previous code had the following error:
-            {last_error}
-            Here was the last generated code that had the error:
-            ```python
-            {last_code}
-            ```  
-            Please fix the code and show the complete corrected version:
-            Original request: {original_prompt}
-            """
-            code_response = fetch_chatgpt_code(prompt, is_retry=True)
+            prompt = generate_retry_prompt(prompt, last_error, last_code)
+            code_response = fetch_chatgpt_code(client, prompt, is_retry=True)
         else:
-            code_response = fetch_chatgpt_code(prompt, is_retry=False)
+            code_response = fetch_chatgpt_code(client, prompt, is_retry=False)
         
         if code_response:
-            output_code = code_response.replace("```python", "").replace("```", "").strip()
+            output_code =  extract_code_from_response(code_response)
             last_code = output_code  
             print("\n=== Python Code ===")
             print(output_code)
@@ -114,6 +102,21 @@ def process_and_execute_code(prompt, filename, max_retries=5):
     print("Code generation FAILED")
     return False
 
+def generate_retry_prompt(original_prompt, last_error, last_code):
+    return f"""
+    The previous code had the following error:
+    {last_error}
+    Here was the last generated code that had the error:
+    ```python
+    {last_code}
+    ```  
+    Please fix the code and show the complete corrected version:
+    Original request: {original_prompt}
+    """
+
+def extract_code_from_response(response):
+    return response.replace("```python", "").replace("```", "").strip()
+
 def optimize_code(original_prompt, original_time, filename):
     try:
         with open(filename, 'r') as file:
@@ -131,9 +134,9 @@ def optimize_code(original_prompt, original_time, filename):
             ```  
             Original request: {original_prompt}
             """
-    code_response = fetch_chatgpt_code(prompt_to_optimize)
+    code_response = fetch_chatgpt_code(client, prompt_to_optimize)
     if code_response:
-        output_code = code_response.replace("```python", "").replace("```", "").strip()
+        output_code = extract_code_from_response(code_response)
         save_code_to_file(output_code, filename)
         success, message = execute_generated_code(filename)
         if success:
@@ -145,4 +148,4 @@ if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
     filename = "generatedcode.py"
     client = initialize_openai_client()
-    process_and_execute_code(prompt, filename)
+    process_and_execute_code(client, prompt, filename)
