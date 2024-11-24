@@ -46,7 +46,7 @@ def execute_generated_code(filename):
     except subprocess.CalledProcessError as e:
         print(f"Error while executing the generated code: {e}")
 
-def process_and_execute_code(prompt, filename="generatedcode.py"):
+def process_and_execute_code(prompt, filename):
     code_response = fetch_chatgpt_code(prompt)
     if code_response:
         output_code = code_response.replace("```python", "").replace("```", "").strip()
@@ -61,4 +61,4 @@ def process_and_execute_code(prompt, filename="generatedcode.py"):
 
 if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
-    process_and_execute_code(prompt)
+    process_and_execute_code(prompt,"generatedcode.py")

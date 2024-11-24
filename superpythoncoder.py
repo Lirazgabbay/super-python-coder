@@ -76,4 +76,7 @@ def super_python_coder():
         return user_input
     
 if __name__ == "__main__":
-    process_and_execute_code(super_python_coder())
+    filename = "generatedcode.py"
+    prompt = super_python_coder()
+    if process_and_execute_code(prompt, filename):
+        print("Code creation completed successfully!")
