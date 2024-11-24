@@ -119,10 +119,9 @@ def extract_code_from_response(response):
 
 def optimize_code(original_prompt, original_time, filename):
     try:
-        with open(filename, 'r') as file:
-            current_code = file.read()
+        current_code = read_code_from_file(filename)
     except Exception as e:
-        print(f"Error reading file: {e}")
+        print(e)
         return original_time
 
     prompt_to_optimize = f"""
@@ -143,6 +142,13 @@ def optimize_code(original_prompt, original_time, filename):
             return message
         else:
             return original_time
+
+def read_code_from_file(filename):
+    try:
+        with open(filename, 'r') as file:
+            return file.read()
+    except Exception as e:
+        raise Exception(f"Error reading file: {e}")
 
 if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
