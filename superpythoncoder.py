@@ -97,8 +97,7 @@ def super_python_coder():
 if __name__ == "__main__":
     filename = "generatedcode.py"
     prompt = super_python_coder()
-    tests_passed = process_and_execute_code(prompt, filename)
-    if tests_passed:
+    if process_and_execute_code(prompt, filename):
         print("Code creation completed successfully!")
         try:
             file_path = os.path.abspath(filename)
