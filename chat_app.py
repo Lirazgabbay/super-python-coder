@@ -7,7 +7,7 @@ import time
 # === Constants ===
 OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
 GPT_MODEL = "gpt-4o-mini"
-UNIT_TEST_PROMPT_SUFFIX = (
+UNIT_TEST_PROMPT = (
     "Also, please include running unit tests with asserts that check the logic of the program. "
     "Make sure to also check interesting edge cases. There should be at least 10 different unit tests. "
     "After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
@@ -22,7 +22,7 @@ def initialize_openai_client():
 def fetch_chatgpt_code(client, prompt, is_retry=False):
     try:
         if not is_retry:
-            prompt_to_send = prompt + UNIT_TEST_PROMPT_SUFFIX
+            prompt_to_send = prompt + UNIT_TEST_PROMPT
         else:
             prompt_to_send = prompt
             
