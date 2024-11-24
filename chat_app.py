@@ -2,6 +2,7 @@
 from openai import OpenAI
 import os
 import subprocess
+import time
 
 # Get API key from environment variable
 api_key = os.getenv("OPENAI_API_KEY")
@@ -38,12 +39,15 @@ def save_code_to_file(code, filename):
 def execute_generated_code(filename):
     try:
         print("\n=== Executing Generated Code ===\n")
+        start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
+        end_time = time.perf_counter()
+        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
             if result.stdout:
                 print("Execution Output:\n", result.stdout)
                 if "All tests passed successfully" in result.stdout:
-                    return True, None
+                    return True, str(execution_time)
             return False, "Tests did not pass successfully"
         else:
             error_msg = result.stderr
@@ -83,14 +87,18 @@ def process_and_execute_code(prompt, filename, max_retries=5):
             print("\n=== Python Code ===")
             print(output_code)
             save_code_to_file(output_code, filename)
-            success, error = execute_generated_code(filename)
+            success, message = execute_generated_code(filename)
             
             if success:
+                original_time = float(message)
+                new_time = float(optimize_code(original_prompt, original_time, filename))
+                if new_time and new_time < original_time:
+                    print(f"Code running time optimized! It now runs in {new_time:.2f} ms, while before it was {original_time:.2f} ms.")
                 return True
             else:
-                last_error = error
+                last_error = message
                 if attempt < max_retries:
-                    print(f"Error running generated code! Error: {error}. Trying again")
+                    print(f"Error running generated code! Error: {message}. Trying again")
         else:
             last_error = "Failed to get response from GPT"
             if attempt < max_retries:
@@ -100,6 +108,33 @@ def process_and_execute_code(prompt, filename, max_retries=5):
     
     print("Code generation FAILED")
     return False
+
+def optimize_code(original_prompt, original_time, filename):
+    try:
+        with open(filename, 'r') as file:
+            current_code = file.read()
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return original_time
+
+    prompt_to_optimize = f"""
+            The previous code had running time of {original_time} ms
+            Please keep the same unit tests but create more efficient code that runs faster
+            Here was the last generated code:
+            ```python
+            {current_code}
+            ```  
+            Original request: {original_prompt}
+            """
+    code_response = fetch_chatgpt_code(prompt_to_optimize)
+    if code_response:
+        output_code = code_response.replace("```python", "").replace("```", "").strip()
+        save_code_to_file(output_code, filename)
+        success, message = execute_generated_code(filename)
+        if success:
+            return message
+        else:
+            return original_time
 
 if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
