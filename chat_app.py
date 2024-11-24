@@ -3,25 +3,33 @@ from openai import OpenAI
 import os
 import subprocess
 import time
-import time
 
-# Get API key from environment variable
+# === Constants ===
+OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
+GPT_MODEL = "gpt-4o-mini"
+UNIT_TEST_PROMPT_SUFFIX = (
+    "Also, please include running unit tests with asserts that check the logic of the program. "
+    "Make sure to also check interesting edge cases. There should be at least 10 different unit tests. "
+    "After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
+)
+SYSTEM_ROLE_MESSAGE = "You are a python programmer who can create a python program to solve a problem. Do not write any explanations, just show me the code itself."
+
+# === Functions ===
 def initialize_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv(OPENAI_API_KEY_ENV_VAR)
     return OpenAI(api_key=api_key)
 
 def fetch_chatgpt_code(client, prompt, is_retry=False):
     try:
         if not is_retry:
-            unit_test_prompt = "Also, please include running unit tests with asserts that check the logic of the program. Make sure to also check interesting edge cases. There should be at least 10 different unit tests. After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
-            prompt_to_send = prompt + unit_test_prompt
+            prompt_to_send = prompt + UNIT_TEST_PROMPT_SUFFIX
         else:
             prompt_to_send = prompt
             
         completion = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model= GPT_MODEL,
             messages=[
-                {"role": "system", "content": "You are a python programer who can create a python program to solve a problem. Do not write any explanations, just show me the code itself."},
+                {"role": "system", "content": SYSTEM_ROLE_MESSAGE},
                 {"role": "user", "content": prompt_to_send}
             ]
         )
