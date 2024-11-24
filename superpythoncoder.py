@@ -1,5 +1,6 @@
 #superpythoncoder.py
 import random
+from chat_app import  process_and_execute_code
 
 def suggest_random_program():
     """Suggest a random program idea if the user doesn't provide one."""
@@ -69,8 +70,10 @@ def super_python_coder():
     if not user_input:
         chosen_program = suggest_random_program()
         print(f"Here's an idea: {chosen_program}")
+        return chosen_program
     else:
         print(f"Great! Let's create a program for: {user_input}")
-
+        return user_input
+    
 if __name__ == "__main__":
-    super_python_coder()
+    process_and_execute_code(super_python_coder())
