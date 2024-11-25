@@ -40,6 +40,7 @@ def fetch_chatgpt_code(client, prompt, is_retry=False):
         return None
 
 def save_code_to_file(code, filename):
+    print(f"\nSaving code to {filename}...")
     try:
         with open(filename, "w") as file:
             file.write(code)
@@ -94,6 +95,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
             if success:
                 original_time = float(message)
                 optimize_code(original_prompt, original_time, filename)
+
                 # Add lint check after optimization
                 lint_success = check_and_fix_lint(client, filename, original_prompt)
                 if lint_success:
@@ -129,6 +131,8 @@ def extract_code_from_response(response):
     return response.replace("```python", "").replace("```", "").strip()
 
 def optimize_code(original_prompt, original_time, filename):
+    print("\n=== Starting Code Optimization ===")
+    print(f"Current execution time: {original_time:.2f}ms")
     try:
         current_code = read_code_from_file(filename)
     except Exception as e:
@@ -162,7 +166,6 @@ def optimize_code(original_prompt, original_time, filename):
                 if optimized_time < original_time:
                     save_code_to_file(optimized_code, filename)
                     os.remove(temp_filename)
-                    print(f"Code running time optimized! It now runs in {optimized_time:.2f} ms, while before it was {original_time:.2f} ms.")
                     return optimized_time
                 else:
                     print("Optimization attempt did not improve performance")
@@ -216,7 +219,6 @@ def fix_lint_issues(client, lint_output, current_code, original_prompt):
 def check_and_fix_lint(client, filename, original_prompt):
     """Check for lint issues and attempt to fix them up to MAX_LINT_ATTEMPTS times."""
     attempts = 0
-    
     while attempts < MAX_LINT_ATTEMPTS:
         lint_output = run_pylint(filename)
         if not lint_output or "Your code has been rated at 10.00/10" in lint_output:
