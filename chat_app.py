@@ -131,6 +131,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
                     print_error("Code works but has some remaining lint issues.")
                 return True
             else:
+                print_error("Error running generated code! Error:{last_error}. Trying again")
                 last_error = message
         else:
             last_error = "Failed to get response from GPT"
@@ -188,9 +189,9 @@ def optimize_code(original_prompt, original_time, filename):
             if success:
                 optimized_time = float(message)
                 
-                # Only keep optimization if it's actually faster
                 if optimized_time < original_time:
                     print_success(f"Optimization successful! New execution time: {optimized_time:.2f}ms")
+                    print_info(f"Code running time optimized! It now runs in {optimized_time:.2f} ms, while before it was {original_time:.2f} ms.")
                     print_info(f"Improvement: {((original_time - optimized_time) / original_time * 100):.1f}%")
                     save_code_to_file(optimized_code, filename)
                     os.remove(temp_filename)
