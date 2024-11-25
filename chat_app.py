@@ -3,6 +3,10 @@ from openai import OpenAI
 import os
 import subprocess
 import time
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init(autoreset=True)
 
 # === Constants ===
 OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
@@ -36,34 +40,35 @@ def fetch_chatgpt_code(client, prompt, is_retry=False):
         )
         return completion.choices[0].message.content
     except Exception as e:
-        print(f"Error fetching response from GPT: {e}")
+        print(Fore.RED + f"Error fetching response from GPT: {e}")
         return None
 
 def save_code_to_file(code, filename):
-    print(f"\nSaving code to {filename}...")
+    print(f"\n{Style.BRIGHT}=== Saving Code ==={Style.RESET_ALL}")
     try:
         with open(filename, "w") as file:
             file.write(code)
-        print(f"Code saved to {filename}")
+        print(Fore.GREEN + f"Code saved to {filename}")
     except Exception as e:
-        print(f"Failed to save code: {e}")
+        print(Fore.RED + f"Failed to save code: {e}")
 
 def execute_generated_code(filename):
     try:
-        print("\n=== Executing Generated Code ===\n")
+        print(f"\n{Style.BRIGHT}=== Executing Generated Code ==={Style.RESET_ALL}")
         start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
         end_time = time.perf_counter()
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
             if result.stdout:
-                print("Execution Output:\n", result.stdout)
+                print(f"\n{Style.BRIGHT}{Fore.CYAN}=== Execution Output ==={Style.RESET_ALL}")
+                print(f"{Fore.GREEN}{result.stdout}{Style.RESET_ALL}")
                 if "All tests passed successfully" in result.stdout:
                     return True, str(execution_time)
             return False, "Tests did not pass successfully"
         else:
             error_msg = result.stderr
-            print("Execution Error:\n", error_msg)
+            print(f"{Fore.RED}Execution Error:{Style.RESET_ALL}\n{error_msg}")
             return False, error_msg
     except subprocess.CalledProcessError as e:
         error_msg = str(e)
@@ -71,6 +76,7 @@ def execute_generated_code(filename):
         return False, error_msg
 
 def process_and_execute_code(client, prompt, filename, max_retries=5):
+    print(f"\n{Style.BRIGHT}=== Processing Code ==={Style.RESET_ALL}")
     attempt = 1
     last_error = None
     last_code = None
@@ -78,7 +84,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
     
     while attempt <= max_retries:
         if attempt > 1:
-            print(f"\nAttempt {attempt}/{max_retries}")
+            print(f"\n{Style.BRIGHT}Attempt {attempt}/{max_retries}{Style.RESET_ALL}")
             prompt = generate_retry_prompt(prompt, last_error, last_code)
             code_response = fetch_chatgpt_code(client, prompt, is_retry=True)
         else:
@@ -108,11 +114,11 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
         else:
             last_error = "Failed to get response from GPT"
             if attempt < max_retries:
-                print(f"Failed to fetch a valid response from GPT. Trying again")
+                print(Fore.RED + f"Failed to fetch a valid response from GPT. Trying again")
         
         attempt += 1
     
-    print("Code generation FAILED")
+    print(Fore.RED + "Code generation FAILED")
     return False
 
 def generate_retry_prompt(original_prompt, last_error, last_code):
@@ -131,7 +137,7 @@ def extract_code_from_response(response):
     return response.replace("```python", "").replace("```", "").strip()
 
 def optimize_code(original_prompt, original_time, filename):
-    print("\n=== Starting Code Optimization ===")
+    print(f"\n{Style.BRIGHT}=== Optimizing Code ==={Style.RESET_ALL}")
     print(f"Current execution time: {original_time:.2f}ms")
     try:
         current_code = read_code_from_file(filename)
@@ -173,7 +179,7 @@ def optimize_code(original_prompt, original_time, filename):
                 print("Optimized version failed tests")
             return original_time
         except Exception as e:
-            print(f"Error during optimization: {e}")
+            print(Fore.RED + f"Error during optimization: {e}")
         finally:
             # Clean up temporary file
             if os.path.exists(temp_filename):
@@ -193,7 +199,7 @@ def run_pylint(filename):
         result = subprocess.run(['pylint', filename], capture_output=True, text=True)
         return result.stdout
     except Exception as e:
-        print(f"Error running pylint: {e}")
+        print(Fore.RED + f"Error running pylint: {e}")
         return None
 
 def fix_lint_issues(client, lint_output, current_code, original_prompt):
@@ -217,15 +223,15 @@ def fix_lint_issues(client, lint_output, current_code, original_prompt):
     return None
 
 def check_and_fix_lint(client, filename, original_prompt):
-    """Check for lint issues and attempt to fix them up to MAX_LINT_ATTEMPTS times."""
+    print(f"\n{Style.BRIGHT}=== Checking Code Quality ==={Style.RESET_ALL}")
     attempts = 0
     while attempts < MAX_LINT_ATTEMPTS:
         lint_output = run_pylint(filename)
         if not lint_output or "Your code has been rated at 10.00/10" in lint_output:
-            print("Amazing. No lint errors/warnings")
+            print(Fore.GREEN + "Amazing. No lint errors/warnings")
             return True
             
-        print(f"\nLint issues found (attempt {attempts + 1}/{MAX_LINT_ATTEMPTS}):")
+        print(Fore.RED + f"Found lint issues (attempt {attempts + 1}/{MAX_LINT_ATTEMPTS}):")
         print(lint_output)
         
         current_code = read_code_from_file(filename)
@@ -233,14 +239,15 @@ def check_and_fix_lint(client, filename, original_prompt):
         
         if fixed_code:
             save_code_to_file(fixed_code, filename)
+            print(Fore.GREEN + "Applied lint fixes")
         else:
-            print("Failed to get fixed code from ChatGPT")
+            print(Fore.RED + "Failed to fix lint issues")
             break
             
         attempts += 1
     
     if attempts >= MAX_LINT_ATTEMPTS:
-        print("There are still lint errors/warnings")
+        print(Fore.RED + f"There are still lint errors/warnings")
     return False
 
 
