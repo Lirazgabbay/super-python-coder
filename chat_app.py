@@ -131,8 +131,8 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
                     print_error("Code works but has some remaining lint issues.")
                 return True
             else:
-                print_error("Error running generated code! Error:{last_error}. Trying again")
                 last_error = message
+                print_error(f"Error running generated code! Error: {last_error}. Trying again")
         else:
             last_error = "Failed to get response from GPT"
             if attempt < max_retries:
