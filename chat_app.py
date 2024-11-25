@@ -3,10 +3,29 @@ from openai import OpenAI
 import os
 import subprocess
 import time
-from colorama import init, Fore, Style
+from colorama import init, Fore, Style, Back
 
 # Initialize colorama
 init(autoreset=True)
+
+# === Color Scheme Constants ===
+def print_header(text):
+    print(f"\n{Style.BRIGHT}{Fore.BLUE}{Back.WHITE}=== {text} ==={Style.RESET_ALL}")
+
+def print_subheader(text):
+    print(f"\n{Style.BRIGHT}{Fore.CYAN}>> {text} <<{Style.RESET_ALL}")
+
+def print_success(text):
+    print(f"{Fore.GREEN}✓ {text}{Style.RESET_ALL}")
+
+def print_error(text):
+    print(f"{Fore.RED}✗ {text}{Style.RESET_ALL}")
+
+def print_info(text):
+    print(f"{Fore.YELLOW}ℹ {text}{Style.RESET_ALL}")
+
+def print_code_section(text):
+    print(f"{Fore.MAGENTA}▶ {text}{Style.RESET_ALL}")
 
 # === Constants ===
 OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
@@ -32,7 +51,7 @@ def fetch_chatgpt_code(client, prompt, is_retry=False):
             prompt_to_send = prompt
             
         completion = client.chat.completions.create(
-            model= GPT_MODEL,
+            model=GPT_MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_ROLE_MESSAGE},
                 {"role": "user", "content": prompt_to_send}
@@ -40,43 +59,45 @@ def fetch_chatgpt_code(client, prompt, is_retry=False):
         )
         return completion.choices[0].message.content
     except Exception as e:
-        print(Fore.RED + f"Error fetching response from GPT: {e}")
+        print_error(f"Error fetching response from GPT: {e}")
         return None
 
 def save_code_to_file(code, filename):
-    print(f"\n{Style.BRIGHT}=== Saving Code ==={Style.RESET_ALL}")
+    print_subheader("Saving Code")
     try:
         with open(filename, "w") as file:
             file.write(code)
-        print(Fore.GREEN + f"Code saved to {filename}")
+        print_success(f"Code saved to {filename}")
     except Exception as e:
-        print(Fore.RED + f"Failed to save code: {e}")
+        print_error(f"Failed to save code: {e}")
 
 def execute_generated_code(filename):
     try:
-        print(f"\n{Style.BRIGHT}=== Executing Generated Code ==={Style.RESET_ALL}")
+        print_header("Executing Generated Code")
         start_time = time.perf_counter()
         result = subprocess.run(['python', filename], capture_output=True, text=True)
         end_time = time.perf_counter()
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
             if result.stdout:
-                print(f"\n{Style.BRIGHT}{Fore.CYAN}=== Execution Output ==={Style.RESET_ALL}")
-                print(f"{Fore.GREEN}{result.stdout}{Style.RESET_ALL}")
+                print_subheader("Execution Output")
+                print(f"{Fore.WHITE}{result.stdout}{Style.RESET_ALL}")
                 if "All tests passed successfully" in result.stdout:
+                    print_success(f"Execution completed in {execution_time:.2f}ms")
                     return True, str(execution_time)
             return False, "Tests did not pass successfully"
         else:
             error_msg = result.stderr
-            print(f"{Fore.RED}Execution Error:{Style.RESET_ALL}\n{error_msg}")
+            print_error("Execution Error:")
+            print(f"{Fore.RED}{error_msg}{Style.RESET_ALL}")
             return False, error_msg
     except subprocess.CalledProcessError as e:
         error_msg = str(e)
-        print(f"Error while executing the generated code: {error_msg}")
+        print_error(f"Error while executing the generated code: {error_msg}")
         return False, error_msg
 
 def process_and_execute_code(client, prompt, filename, max_retries=5):
-    print(f"\n{Style.BRIGHT}=== Processing Code ==={Style.RESET_ALL}")
+    print_header("Processing Code")
     attempt = 1
     last_error = None
     last_code = None
@@ -84,7 +105,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
     
     while attempt <= max_retries:
         if attempt > 1:
-            print(f"\n{Style.BRIGHT}Attempt {attempt}/{max_retries}{Style.RESET_ALL}")
+            print_subheader(f"Attempt {attempt}/{max_retries}")
             prompt = generate_retry_prompt(prompt, last_error, last_code)
             code_response = fetch_chatgpt_code(client, prompt, is_retry=True)
         else:
@@ -105,20 +126,20 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
                 # Add lint check after optimization
                 lint_success = check_and_fix_lint(client, filename, original_prompt)
                 if lint_success:
-                    print("Code generation, optimization, and lint checking completed successfully!")
+                    print_success("Code generation, optimization, and lint checking completed successfully!")
                 else:
-                    print("Code works but has some remaining lint issues.")
+                    print_error("Code works but has some remaining lint issues.")
                 return True
             else:
                 last_error = message
         else:
             last_error = "Failed to get response from GPT"
             if attempt < max_retries:
-                print(Fore.RED + f"Failed to fetch a valid response from GPT. Trying again")
+                print_info("Failed to fetch a valid response from GPT. Trying again")
         
         attempt += 1
     
-    print(Fore.RED + "Code generation FAILED")
+    print_error("Code generation FAILED")
     return False
 
 def generate_retry_prompt(original_prompt, last_error, last_code):
@@ -137,12 +158,12 @@ def extract_code_from_response(response):
     return response.replace("```python", "").replace("```", "").strip()
 
 def optimize_code(original_prompt, original_time, filename):
-    print(f"\n{Style.BRIGHT}=== Optimizing Code ==={Style.RESET_ALL}")
-    print(f"Current execution time: {original_time:.2f}ms")
+    print_header("Optimizing Code")
+    print_info(f"Current execution time: {original_time:.2f}ms")
     try:
         current_code = read_code_from_file(filename)
     except Exception as e:
-        print(e)
+        print_error(str(e))
         return original_time
 
     prompt_to_optimize = f"""
@@ -150,7 +171,7 @@ def optimize_code(original_prompt, original_time, filename):
             Please keep the same unit tests but create more efficient code that runs faster
             Here was the last generated code:
             ```python
-            {current_code}
+    {current_code}
             ```  
             Original request: {original_prompt}
             """
@@ -163,13 +184,14 @@ def optimize_code(original_prompt, original_time, filename):
         try:
             optimized_code = extract_code_from_response(code_response)
             save_code_to_file(optimized_code, temp_filename)
-            
             success, message = execute_generated_code(temp_filename)
             if success:
                 optimized_time = float(message)
                 
                 # Only keep optimization if it's actually faster
                 if optimized_time < original_time:
+                    print_success(f"Optimization successful! New execution time: {optimized_time:.2f}ms")
+                    print_info(f"Improvement: {((original_time - optimized_time) / original_time * 100):.1f}%")
                     save_code_to_file(optimized_code, filename)
                     os.remove(temp_filename)
                     return optimized_time
@@ -177,11 +199,10 @@ def optimize_code(original_prompt, original_time, filename):
                     print("Optimization attempt did not improve performance")
             else:
                 print("Optimized version failed tests")
-            return original_time
+                return original_time
         except Exception as e:
-            print(Fore.RED + f"Error during optimization: {e}")
+            print_error(f"Error during optimization: {e}")
         finally:
-            # Clean up temporary file
             if os.path.exists(temp_filename):
                 os.remove(temp_filename)
         return original_time
@@ -199,7 +220,7 @@ def run_pylint(filename):
         result = subprocess.run(['pylint', filename], capture_output=True, text=True)
         return result.stdout
     except Exception as e:
-        print(Fore.RED + f"Error running pylint: {e}")
+        print_error(f"Error running pylint: {e}")
         return None
 
 def fix_lint_issues(client, lint_output, current_code, original_prompt):
@@ -223,7 +244,7 @@ def fix_lint_issues(client, lint_output, current_code, original_prompt):
     return None
 
 def check_and_fix_lint(client, filename, original_prompt):
-    print(f"\n{Style.BRIGHT}=== Checking Code Quality ==={Style.RESET_ALL}")
+    print_header("Checking Code Quality")
     attempts = 0
     while attempts < MAX_LINT_ATTEMPTS:
         lint_output = run_pylint(filename)
@@ -231,17 +252,17 @@ def check_and_fix_lint(client, filename, original_prompt):
             print(Fore.GREEN + "Amazing. No lint errors/warnings")
             return True
             
-        print(Fore.RED + f"Found lint issues (attempt {attempts + 1}/{MAX_LINT_ATTEMPTS}):")
-        print(lint_output)
+        print_error(f"Found lint issues (attempt {attempts + 1}/{MAX_LINT_ATTEMPTS}):")
+        print(f"{Fore.YELLOW}{lint_output}{Style.RESET_ALL}")
         
         current_code = read_code_from_file(filename)
         fixed_code = fix_lint_issues(client, lint_output, current_code, original_prompt)
         
         if fixed_code:
             save_code_to_file(fixed_code, filename)
-            print(Fore.GREEN + "Applied lint fixes")
+            print_success("Applied lint fixes")
         else:
-            print(Fore.RED + "Failed to fix lint issues")
+            print_error("Failed to fix lint issues")
             break
             
         attempts += 1
