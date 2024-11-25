@@ -2,8 +2,7 @@
 import random
 import subprocess
 import os
-
-from chat_app import  process_and_execute_code
+from chat_app import process_and_execute_code, initialize_openai_client
 
 def suggest_random_program():
     """Suggest a random program idea if the user doesn't provide one."""
@@ -110,7 +109,8 @@ def super_python_coder():
 if __name__ == "__main__":
     filename = "generatedcode.py"
     prompt = super_python_coder()
-    if process_and_execute_code(prompt, filename):
+    client = initialize_openai_client()
+    if process_and_execute_code(client, prompt, filename):
         print("Code creation completed successfully!")
         try:
             file_path = os.path.abspath(filename)

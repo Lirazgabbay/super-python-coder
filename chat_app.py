@@ -93,9 +93,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
 
             if success:
                 original_time = float(message)
-                new_time = float(optimize_code(original_prompt, original_time, filename))
-                if new_time and new_time < original_time:
-                    print(f"Code running time optimized! It now runs in {new_time:.2f} ms, while before it was {original_time:.2f} ms.")
+                optimize_code(original_prompt, original_time, filename)
                 # Add lint check after optimization
                 lint_success = check_and_fix_lint(client, filename, original_prompt)
                 if lint_success:
@@ -147,14 +145,37 @@ def optimize_code(original_prompt, original_time, filename):
             Original request: {original_prompt}
             """
     code_response = fetch_chatgpt_code(client, prompt_to_optimize)
-    if code_response:
-        output_code = extract_code_from_response(code_response)
-        save_code_to_file(output_code, filename)
-        success, message = execute_generated_code(filename)
-        if success:
-            return message
-        else:
+    if not code_response:
+        return None
+    else:
+        # Save optimized version to temporary file for testing
+        temp_filename = "temp.py"
+        try:
+            optimized_code = extract_code_from_response(code_response)
+            save_code_to_file(optimized_code, temp_filename)
+            
+            success, message = execute_generated_code(temp_filename)
+            if success:
+                optimized_time = float(message)
+                
+                # Only keep optimization if it's actually faster
+                if optimized_time < original_time:
+                    save_code_to_file(optimized_code, filename)
+                    os.remove(temp_filename)
+                    print(f"Code running time optimized! It now runs in {optimized_time:.2f} ms, while before it was {original_time:.2f} ms.")
+                    return optimized_time
+                else:
+                    print("Optimization attempt did not improve performance")
+            else:
+                print("Optimized version failed tests")
             return original_time
+        except Exception as e:
+            print(f"Error during optimization: {e}")
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+        return original_time
 
 def read_code_from_file(filename):
     try:
@@ -219,7 +240,7 @@ def check_and_fix_lint(client, filename, original_prompt):
     if attempts >= MAX_LINT_ATTEMPTS:
         print("There are still lint errors/warnings")
     return False
-#end here
+
 
 if __name__ == "__main__":
     prompt = "Create a python program that checks if a number is prime. Do not write any explanations, just show me the code itself."
