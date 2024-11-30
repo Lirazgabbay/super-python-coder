@@ -94,17 +94,14 @@ def execute_generated_code(filename):
             
             # Update the progress bar while the process is running
             while process.poll() is None:
-                time.sleep(0.5)  # Simulate progress update interval
-                pbar.update(10)  # Increment progress by 10% per cycle
+                time.sleep(0.5)  
+                pbar.update(10)  
 
             result_stdout, result_stderr = process.communicate()
             end_time = time.perf_counter()
             execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
-            
-            # Ensure the progress bar completes
             pbar.update(100 - pbar.n)
 
-        # Process results
         if process.returncode == 0:
             # If return code is 0 and no stderr, tests passed successfully
             if not result_stderr:
@@ -276,7 +273,15 @@ def check_and_fix_lint(client, filename, original_prompt):
     print_header("Checking Code Quality")
     attempts = 0
     while attempts < MAX_LINT_ATTEMPTS:
-        lint_output = run_pylint(filename)
+        with tqdm(total=100, desc=f"Lint Check Attempt {attempts + 1}", unit="%", ncols=80) as pbar:
+            for _ in range(5): 
+                time.sleep(0.2)  
+                pbar.update(20)  
+        
+            # Run pylint
+            lint_output = run_pylint(filename)
+            pbar.update(100 - pbar.n) 
+
         if not lint_output or "Your code has been rated at 10.00/10" in lint_output:
             print(Fore.GREEN + "Amazing. No lint errors/warnings")
             return True
