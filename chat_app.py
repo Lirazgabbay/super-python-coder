@@ -30,7 +30,6 @@ GPT_MODEL = "gpt-4o-mini"
 UNIT_TEST_PROMPT = (
     "Also, please include running unit tests with asserts that check the logic of the program. "
     "Make sure to also check interesting edge cases. There should be at least 10 different unit tests. "
-    "After all tests, print exactly this message (without quotes): 'All tests passed successfully.'"
 )
 SYSTEM_ROLE_MESSAGE = "You are a python programmer who can create a python program to solve a problem. Do not write any explanations, just show me the code itself."
 MAX_LINT_ATTEMPTS = 3
@@ -76,12 +75,13 @@ def execute_generated_code(filename):
         end_time = time.perf_counter()
         execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
         if result.returncode == 0:
-            if result.stdout:
-                print_subheader("Execution Output")
-                print(f"{Fore.WHITE}{result.stdout}{Style.RESET_ALL}")
-                if "All tests passed successfully" in result.stdout:
-                    print_success(f"Execution completed in {execution_time:.2f}ms")
-                    return True, str(execution_time)
+            # If return code is 0 and no stderr, tests passed successfully
+            if not result.stderr:
+                print_subheader("Test Results")
+                if result.stdout:
+                    print(f"{Fore.WHITE}{result.stdout}{Style.RESET_ALL}")
+                print_success(f"All tests passed! Execution completed in {execution_time:.2f}ms")
+                return True, str(execution_time)
             return False, "Tests did not pass successfully"
         else:
             error_msg = result.stderr
