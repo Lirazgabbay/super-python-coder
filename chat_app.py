@@ -72,11 +72,17 @@ def fetch_chatgpt_code(client, prompt, is_retry=False):
 def save_code_to_file(code, filename):
     print_subheader("Saving Code")
     try:
-        with open(filename, "w") as file:
-            file.write(code)
+        with tqdm(total=100, desc="Saving Code to File", unit="%", ncols=80) as pbar:
+            for _ in range(5): 
+                time.sleep(0.2)  
+                pbar.update(20)  
+            with open(filename, "w") as file:
+                file.write(code)
+            pbar.update(100 - pbar.n)  
         print_success(f"Code saved to {filename}")
     except Exception as e:
         print_error(f"Failed to save code: {e}")
+
 
 def execute_generated_code(filename):
     try:
