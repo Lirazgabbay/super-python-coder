@@ -2,6 +2,7 @@
 from openai import OpenAI
 import os
 import subprocess
+from tqdm import tqdm
 import time
 from colorama import init, Fore, Style, Back
 
@@ -36,24 +37,34 @@ MAX_LINT_ATTEMPTS = 3
 
 # === Functions ===
 def initialize_openai_client():
+    with tqdm(total=100, desc="Initializing OpenAI Client", unit="%", ncols=80) as pbar:
+        for _ in range(5): 
+            time.sleep(0.5)  
+            pbar.update(20)  
+        pbar.update(100 - pbar.n) 
+    
     api_key = os.getenv(OPENAI_API_KEY_ENV_VAR)
     return OpenAI(api_key=api_key)
 
 def fetch_chatgpt_code(client, prompt, is_retry=False):
     try:
-        if not is_retry:
-            prompt_to_send = prompt + UNIT_TEST_PROMPT
-        else:
-            prompt_to_send = prompt
-            
-        completion = client.chat.completions.create(
-            model=GPT_MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_ROLE_MESSAGE},
-                {"role": "user", "content": prompt_to_send}
-            ]
-        )
+        prompt_to_send = prompt + UNIT_TEST_PROMPT if not is_retry else prompt 
+        with tqdm(total=100, desc="Fetching GPT Response", unit="%", ncols=80) as pbar:
+            for _ in range(4): 
+                time.sleep(0.5)  
+                pbar.update(25)  
+
+            completion = client.chat.completions.create(
+                model=GPT_MODEL,
+                messages=[
+                    {"role": "system", "content": SYSTEM_ROLE_MESSAGE},
+                    {"role": "user", "content": prompt_to_send}
+                ]
+            )
+            pbar.update(100 - pbar.n)  
+
         return completion.choices[0].message.content
+
     except Exception as e:
         print_error(f"Error fetching response from GPT: {e}")
         return None
