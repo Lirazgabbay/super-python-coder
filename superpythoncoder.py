@@ -23,32 +23,10 @@ def suggest_random_program():
         Input: str1 = "AB", str2 = "C""",
 
         # Problem 2: Palindrome Number
-        """Create a program that checks if a number is a palindrome.
-        Requirements:
-        - Take a number as input
-        - Return True if it's a palindrome, False otherwise
-        - Handle negative numbers and edge cases""",
-        # Problem 2: Palindrome Number
-        """Create a program that checks if a number is a palindrome.
-        Requirements:
-        - Take a number as input
-        - Return True if it's a palindrome, False otherwise
-        - Handle negative numbers and edge cases""",
+        """Create a program that checks if a number is a palindrome.""",
 
         # Problem 3: BST K-th Element
-        """Create a program that finds the kth smallest element in a binary search tree.
-        Requirements:
-        - Implement a binary search tree
-        - Find the kth smallest element
-        - Handle edge cases (empty tree, k > tree size)
-        - Use efficient traversal methods"""
-        # Problem 3: BST K-th Element
-        """Create a program that finds the kth smallest element in a binary search tree.
-        Requirements:
-        - Implement a binary search tree
-        - Find the kth smallest element
-        - Handle edge cases (empty tree, k > tree size)
-        - Use efficient traversal methods"""
+        """Create a program that finds the kth smallest element in a binary search tree."""
 
         #problem 4: shortest-path-in-a-grid-with-obstacles-elimination
         """ You are given an m x n integer matrix grid where each cell is either 0 (empty) or 1 (obstacle). You can move up, down, left, or right from and to an empty cell in one step.

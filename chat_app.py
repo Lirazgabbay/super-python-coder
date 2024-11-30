@@ -24,9 +24,6 @@ def print_error(text):
 def print_info(text):
     print(f"{Fore.YELLOW}ℹ {text}{Style.RESET_ALL}")
 
-def print_code_section(text):
-    print(f"{Fore.MAGENTA}▶ {text}{Style.RESET_ALL}")
-
 # === Constants ===
 OPENAI_API_KEY_ENV_VAR = "OPENAI_API_KEY"
 GPT_MODEL = "gpt-4o-mini"
@@ -121,7 +118,7 @@ def process_and_execute_code(client, prompt, filename, max_retries=5):
 
             if success:
                 original_time = float(message)
-                optimize_code(original_prompt, original_time, filename)
+                optimize_code(client, original_prompt, original_time, filename)
 
                 # Add lint check after optimization
                 lint_success = check_and_fix_lint(client, filename, original_prompt)
@@ -158,7 +155,7 @@ def generate_retry_prompt(original_prompt, last_error, last_code):
 def extract_code_from_response(response):
     return response.replace("```python", "").replace("```", "").strip()
 
-def optimize_code(original_prompt, original_time, filename):
+def optimize_code(client, original_prompt, original_time, filename):
     print_header("Optimizing Code")
     print_info(f"Current execution time: {original_time:.2f}ms")
     try:
