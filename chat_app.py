@@ -91,12 +91,6 @@ def execute_generated_code(filename):
         with tqdm(total=100, desc="Code Execution in Progress", unit="%", ncols=80) as pbar:
             start_time = time.perf_counter()
             process = subprocess.Popen(['python', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            
-            # Update the progress bar while the process is running
-            while process.poll() is None:
-                time.sleep(0.5)  
-                pbar.update(10)  
-
             result_stdout, result_stderr = process.communicate()
             end_time = time.perf_counter()
             execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
@@ -295,6 +289,10 @@ def check_and_fix_lint(client, filename, original_prompt):
         if fixed_code:
             save_code_to_file(fixed_code, filename)
             print_success("Applied lint fixes")
+            lint_output = run_pylint(filename)
+            if not lint_output or "Your code has been rated at 10.00/10" in lint_output:
+                print(Fore.GREEN + "All lint issues resolved!")
+                return True
         else:
             print_error("Failed to fix lint issues")
             break
