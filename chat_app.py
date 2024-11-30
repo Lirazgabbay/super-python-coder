@@ -83,29 +83,43 @@ def save_code_to_file(code, filename):
     except Exception as e:
         print_error(f"Failed to save code: {e}")
 
-
 def execute_generated_code(filename):
     try:
         print_header("Executing Generated Code")
-        start_time = time.perf_counter()
-        result = subprocess.run(['python', filename], capture_output=True, text=True)
-        end_time = time.perf_counter()
-        execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
-        if result.returncode == 0:
+        
+        # Initialize the progress bar
+        with tqdm(total=100, desc="Code Execution in Progress", unit="%", ncols=80) as pbar:
+            start_time = time.perf_counter()
+            process = subprocess.Popen(['python', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+            # Update the progress bar while the process is running
+            while process.poll() is None:
+                time.sleep(0.5)  # Simulate progress update interval
+                pbar.update(10)  # Increment progress by 10% per cycle
+
+            result_stdout, result_stderr = process.communicate()
+            end_time = time.perf_counter()
+            execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+            
+            # Ensure the progress bar completes
+            pbar.update(100 - pbar.n)
+
+        # Process results
+        if process.returncode == 0:
             # If return code is 0 and no stderr, tests passed successfully
-            if not result.stderr:
+            if not result_stderr:
                 print_subheader("Test Results")
-                if result.stdout:
-                    print(f"{Fore.WHITE}{result.stdout}{Style.RESET_ALL}")
+                if result_stdout:
+                    print(f"{Fore.WHITE}{result_stdout}{Style.RESET_ALL}")
                 print_success(f"All tests passed! Execution completed in {execution_time:.2f}ms")
                 return True, str(execution_time)
             return False, "Tests did not pass successfully"
         else:
-            error_msg = result.stderr
+            error_msg = result_stderr
             print_error("Execution Error:")
             print(f"{Fore.RED}{error_msg}{Style.RESET_ALL}")
             return False, error_msg
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         error_msg = str(e)
         print_error(f"Error while executing the generated code: {error_msg}")
         return False, error_msg
